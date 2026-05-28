@@ -271,6 +271,9 @@ export const NodeShape: React.FC<Props> = ({
           y={node.y + (node.fontSize ?? 16)}
           fill={node.textColor ?? '#ffffff'}
           fontSize={node.fontSize ?? 16}
+          stroke="rgba(0,0,0,0.55)"
+          strokeWidth={Math.max(2, (node.fontSize ?? 16) * 0.15)}
+          paintOrder="stroke fill"
           style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
           {node.content ?? ''}
