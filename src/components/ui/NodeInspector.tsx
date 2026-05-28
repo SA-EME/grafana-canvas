@@ -1,7 +1,7 @@
 // components/ui/NodeInspector.tsx
 import React from 'react';
 import { css } from '@emotion/css';
-import { Button, Badge, Input, Field } from '@grafana/ui';
+import { Button, Badge, Input, Field, Switch } from '@grafana/ui';
 import type { CanvasNode } from '../../types';
 import type { DeviceItem } from '../../utils/dataFrameToItems';
 import { coerceValue } from '../../utils/dataFrameToItems';
@@ -263,6 +263,13 @@ export const NodeInspector: React.FC<Props> = ({
                 onBlur={(e) => onNodePatch({ textColor: e.target.value }, true)}
               />
             </div>
+
+            <Field label="Background">
+              <Switch
+                value={selectedNode.showBackground !== false}
+                onChange={(e) => onNodePatch({ showBackground: e.currentTarget.checked }, true)}
+              />
+            </Field>
 
             <div className={styles.actions}>
               <Button size="sm" variant="secondary" onClick={onBringToFront}>

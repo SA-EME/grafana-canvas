@@ -114,6 +114,7 @@ export function useCanvasController(
       content: 'Text',
       fontSize: 18,
       textColor: '#ffffff',
+      showBackground: true,
       zIndex: Math.max(maxZ + 1, 1),
     };
 

@@ -1,5 +1,5 @@
 // components/nodes/NodeShape.tsx
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { CanvasNode } from '../../types';
 
@@ -42,8 +42,10 @@ export const NodeShape: React.FC<Props> = ({
   onResize,
 }) => {
   const textRef = useRef<SVGTextElement>(null);
+  // Offset relative to node.x/y so the pill follows the node during drag without re-measuring.
+  const [textOffset, setTextOffset] = useState<{ dx: number; dy: number; w: number; h: number } | null>(null);
 
-  // Measure rendered text dimensions and sync node.w/h so the selection box stays accurate.
+  // Measure rendered text dimensions after paint.
   // Runs only when content or fontSize changes to avoid update loops.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
@@ -55,8 +57,15 @@ export const NodeShape: React.FC<Props> = ({
       if (bbox.width < 1) {
         return;
       }
-      const newW = Math.ceil(bbox.width) + 8;
-      const newH = Math.ceil(bbox.height) + 8;
+      const pad = 4;
+      setTextOffset({
+        dx: bbox.x - node.x - pad,
+        dy: bbox.y - node.y - pad,
+        w: bbox.width + pad * 2,
+        h: bbox.height + pad * 2,
+      });
+      const newW = Math.ceil(bbox.width) + pad * 2;
+      const newH = Math.ceil(bbox.height) + pad * 2;
       if (Math.abs(newW - node.w) > 1 || Math.abs(newH - node.h) > 1) {
         onResize({ x: node.x, y: node.y, w: newW, h: newH }, true);
       }
@@ -278,6 +287,17 @@ export const NodeShape: React.FC<Props> = ({
   if (elementKind === 'text') {
     return (
       <g onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
+        {node.showBackground !== false && textOffset && (
+          <rect
+            x={node.x + textOffset.dx}
+            y={node.y + textOffset.dy}
+            width={textOffset.w}
+            height={textOffset.h}
+            rx={4}
+            fill="rgba(0,0,0,0.45)"
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
         {editMode && (
           <rect
             x={node.x}
@@ -296,9 +316,6 @@ export const NodeShape: React.FC<Props> = ({
           y={node.y + (node.fontSize ?? 16)}
           fill={node.textColor ?? '#ffffff'}
           fontSize={node.fontSize ?? 16}
-          stroke="rgba(0,0,0,0.55)"
-          strokeWidth={Math.max(2, (node.fontSize ?? 16) * 0.15)}
-          paintOrder="stroke fill"
           style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
           {node.content ?? ''}

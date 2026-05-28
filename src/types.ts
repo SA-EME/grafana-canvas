@@ -37,6 +37,7 @@ export interface CanvasNode {
   content?: string;
   fontSize?: number;
   textColor?: string;
+  showBackground?: boolean;
 }
 
 export interface CanvasLink {
