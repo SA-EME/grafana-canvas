@@ -1,5 +1,5 @@
 // components/nodes/NodeShape.tsx
-import React, { useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { CanvasNode } from '../../types';
 
@@ -41,6 +41,30 @@ export const NodeShape: React.FC<Props> = ({
   onDrag,
   onResize,
 }) => {
+  const textRef = useRef<SVGTextElement>(null);
+
+  // Measure rendered text dimensions and sync node.w/h so the selection box stays accurate.
+  // Runs only when content or fontSize changes to avoid update loops.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    if (node.elementKind !== 'text' || !textRef.current) {
+      return;
+    }
+    try {
+      const bbox = textRef.current.getBBox();
+      if (bbox.width < 1) {
+        return;
+      }
+      const newW = Math.ceil(bbox.width) + 8;
+      const newH = Math.ceil(bbox.height) + 8;
+      if (Math.abs(newW - node.w) > 1 || Math.abs(newH - node.h) > 1) {
+        onResize({ x: node.x, y: node.y, w: newW, h: newH }, true);
+      }
+    } catch (_) {
+      // getBBox throws when element is not attached to the DOM
+    }
+  }, [node.content, node.fontSize]);
+
   const dragRef = useRef({
     dragging: false,
     startClientX: 0,
@@ -267,6 +291,7 @@ export const NodeShape: React.FC<Props> = ({
           />
         )}
         <text
+          ref={textRef}
           x={node.x}
           y={node.y + (node.fontSize ?? 16)}
           fill={node.textColor ?? '#ffffff'}

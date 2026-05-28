@@ -246,9 +246,10 @@ export const NodeInspector: React.FC<Props> = ({
               <Input
                 type="number"
                 min={6}
+                max={256}
                 value={selectedNode.fontSize ?? 18}
-                onChange={(e) => onNodePatch({ fontSize: Number(e.currentTarget.value) }, false)}
-                onBlur={(e) => onNodePatch({ fontSize: Number(e.currentTarget.value) }, true)}
+                onChange={(e) => onNodePatch({ fontSize: Math.min(256, Math.max(6, Number(e.currentTarget.value))) }, false)}
+                onBlur={(e) => onNodePatch({ fontSize: Math.min(256, Math.max(6, Number(e.currentTarget.value))) }, true)}
               />
             </Field>
 
@@ -351,9 +352,10 @@ export const NodeInspector: React.FC<Props> = ({
             <Input
               type="number"
               min={6}
+              max={256}
               value={selectedNode.fontSize ?? 14}
-              onChange={(e) => onNodePatch({ fontSize: Number(e.currentTarget.value) }, false)}
-              onBlur={(e) => onNodePatch({ fontSize: Number(e.currentTarget.value) }, true)}
+              onChange={(e) => onNodePatch({ fontSize: Math.min(256, Math.max(6, Number(e.currentTarget.value))) }, false)}
+              onBlur={(e) => onNodePatch({ fontSize: Math.min(256, Math.max(6, Number(e.currentTarget.value))) }, true)}
             />
           </Field>
         </div>

@@ -110,7 +110,7 @@ export function useCanvasController(
       x: center.x - 100,
       y: center.y - 12,
       w: 200,
-      h: 32,
+      h: 29,
       content: 'Text',
       fontSize: 18,
       textColor: '#ffffff',
