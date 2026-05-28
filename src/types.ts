@@ -59,6 +59,7 @@ export interface SimpleOptions {
   showMiniHud: boolean;
   showViewControls: boolean;
   showNodeInspector: boolean;
+  showCanvasSection: boolean;
   defaultViewport: Viewport;
   canvas: CanvasOptionsState;
 }

@@ -1,11 +1,11 @@
 // components/ui/NodeInspector.tsx
-import React from 'react';
-import { css } from '@emotion/css';
-import { Button, Badge, Input, Field, Switch } from '@grafana/ui';
+import React, { useState } from 'react';
+import { css, cx } from '@emotion/css';
+import { Button, Badge, Input, Field, Switch, Icon } from '@grafana/ui';
 import type { CanvasNode } from '../../types';
-import type { DeviceItem } from '../../utils/dataFrameToItems';
+import type { DeviceItem, DeviceExtraField } from '../../utils/dataFrameToItems';
 import { coerceValue } from '../../utils/dataFrameToItems';
-import type { FieldConfig, GrafanaTheme2 } from '@grafana/data';
+import type { FieldConfig, GrafanaTheme2, LinkModel, Field as DataField } from '@grafana/data';
 import { getDisplayForValue } from '../../utils/colors';
 
 const styles = {
@@ -54,6 +54,60 @@ const styles = {
     gap: 8px;
     margin: 4px 0;
   `,
+  sectionHeader: css`
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.9;
+    cursor: pointer;
+    user-select: none;
+    margin: 12px 0 6px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    &:hover {
+      opacity: 1;
+    }
+  `,
+  sectionHeaderFirst: css`
+    border-top: none;
+    padding-top: 0;
+    margin-top: 8px;
+  `,
+  extraRow: css`
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    margin: 3px 0;
+    opacity: 0.95;
+  `,
+  extraKey: css`
+    font-size: 13px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  `,
+  extraVal: css`
+    font-size: 13px;
+    text-align: right;
+    word-break: break-all;
+  `,
+  linkItem: css`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 0;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    text-decoration: none;
+    opacity: 0.9;
+    &:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  `,
   colorLabel: css`
     font-size: 12px;
     opacity: 0.8;
@@ -75,6 +129,8 @@ interface Props {
   selectedNode?: CanvasNode;
   selectedItem?: DeviceItem;
   linkFromNodeId: string | null;
+  dataLinks: Array<LinkModel<DataField>>;
+  showCanvasSection: boolean;
   onDelete: () => void;
   onStartLink: () => void;
   onCancelLink: () => void;
@@ -90,6 +146,8 @@ export const NodeInspector: React.FC<Props> = ({
   selectedNode,
   selectedItem,
   linkFromNodeId,
+  dataLinks,
+  showCanvasSection,
   onDelete,
   onStartLink,
   onCancelLink,
@@ -307,6 +365,11 @@ export const NodeInspector: React.FC<Props> = ({
   const disp = getDisplayForValue(theme, fieldConfigDefaults, effectiveValue);
   const valueText = disp.text ?? (effectiveValue === undefined ? '(none)' : String(effectiveValue));
 
+  const extraEntries = Object.entries(selectedItem?.extraFields ?? {}) as Array<[string, DeviceExtraField]>;
+
+  // Canvas section collapsed by default in view mode, expanded in edit mode
+  const [canvasOpen, setCanvasOpen] = useState(editMode);
+
   return (
     <div className={styles.panel}>
       <div className={styles.title}>
@@ -314,24 +377,84 @@ export const NodeInspector: React.FC<Props> = ({
         <Badge text={valueText} color="blue" />
       </div>
 
-      <div className={styles.row}>
-        <b>value:</b> {effectiveValue === undefined ? '(none)' : String(effectiveValue)}
-      </div>
-      <div className={styles.row}>
-        <b>nodeId:</b> {selectedNode.nodeId}
-      </div>
-      <div className={styles.row}>
-        <b>dataId:</b> {selectedNode.dataId ?? '(none)'}
-      </div>
-      <div className={styles.row}>
-        <b>name:</b> {selectedItem?.name ?? selectedNode.label ?? '(none)'}
-      </div>
-      <div className={styles.row}>
-        <b>pos:</b> x={Math.round(selectedNode.x)} y={Math.round(selectedNode.y)}
-      </div>
-      <div className={styles.row}>
-        <b>size:</b> {selectedNode.w}×{selectedNode.h}
-      </div>
+      {/* ── Links section ── */}
+      {dataLinks.length > 0 && (
+        <>
+          <div className={cx(styles.sectionHeader, styles.sectionHeaderFirst)}>
+            Links
+          </div>
+          {dataLinks.map((link, i) => (
+            <a
+              key={i}
+              className={styles.linkItem}
+              href={link.href}
+              target={link.target}
+              rel="noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                if (link.target === '_blank') {
+                  window.open(link.href, '_blank');
+                } else {
+                  window.location.href = link.href;
+                }
+              }}
+            >
+              <Icon name="external-link-alt" size="xs" />
+              {link.title || link.href}
+            </a>
+          ))}
+        </>
+      )}
+
+      {/* ── Datasource section ── */}
+      {extraEntries.length > 0 && (
+        <>
+          <div className={cx(styles.sectionHeader, dataLinks.length === 0 && styles.sectionHeaderFirst)}>
+            <Icon name="database" size="xs" />
+            Datasource
+          </div>
+          {extraEntries.map(([k, f]) => (
+            <div key={k} className={styles.extraRow}>
+              <span className={styles.extraKey}>{k}</span>
+              <span className={styles.extraVal} style={f.color ? { color: f.color } : undefined}>
+                {String(f.value)}
+              </span>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* ── Canvas section ── */}
+      {showCanvasSection && (
+        <>
+          <div className={styles.sectionHeader} onClick={() => setCanvasOpen((o) => !o)}>
+            <Icon name={canvasOpen ? 'angle-down' : 'angle-right'} size="xs" />
+            Canvas
+          </div>
+          {canvasOpen && (
+            <>
+              <div className={styles.row}>
+                <b>value:</b> {effectiveValue === undefined ? '(none)' : String(effectiveValue)}
+              </div>
+              <div className={styles.row}>
+                <b>nodeId:</b> {selectedNode.nodeId}
+              </div>
+              <div className={styles.row}>
+                <b>dataId:</b> {selectedNode.dataId ?? '(none)'}
+              </div>
+              <div className={styles.row}>
+                <b>name:</b> {selectedItem?.name ?? selectedNode.label ?? '(none)'}
+              </div>
+              <div className={styles.row}>
+                <b>pos:</b> x={Math.round(selectedNode.x)} y={Math.round(selectedNode.y)}
+              </div>
+              <div className={styles.row}>
+                <b>size:</b> {selectedNode.w}×{selectedNode.h}
+              </div>
+            </>
+          )}
+        </>
+      )}
 
       {editMode && (
         <div className={styles.fields}>

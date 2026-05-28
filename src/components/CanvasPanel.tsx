@@ -69,12 +69,19 @@ export const CanvasPanel: React.FC<Props> = ({
       const node = canvas.nodes.find((n) => n.nodeId === nodeId);
       const elementKind = node?.elementKind ?? 'node';
 
-      // Data links: only for network nodes (not shapes/texts), when inspector is disabled
-      if (!options.showNodeInspector && elementKind === 'node') {
+      // Shapes and texts are only selectable in edit mode
+      if (elementKind !== 'node') {
+        if (options.editMode) {
+          setSelectedNodeId(nodeId);
+        }
+        return;
+      }
+
+      // Without inspector: datalinks navigate directly or open popup
+      if (!options.showNodeInspector) {
         if (node?.dataId) {
           const links = getDataLinksForId(data, node.dataId, replaceVariables);
           if (links.length === 1) {
-            // Single link: navigate directly without popup
             const link = links[0];
             if (link.target === '_blank') {
               window.open(link.href, '_blank');
@@ -88,15 +95,7 @@ export const CanvasPanel: React.FC<Props> = ({
         return;
       }
 
-      // Shapes and texts are only selectable in edit mode
-      if (elementKind !== 'node') {
-        if (options.editMode) {
-          setSelectedNodeId(nodeId);
-        }
-        return;
-      }
-
-      // Normal node inspector behavior
+      // With inspector: select node (links are shown inside the inspector)
       if (options.editMode && linkFromNodeId) {
         if (nodeId !== linkFromNodeId) {
           canvas.addLink(linkFromNodeId, nodeId);
@@ -142,6 +141,12 @@ export const CanvasPanel: React.FC<Props> = ({
   }, [selectedNodeId]);
 
   const handleCancelLink = useCallback(() => setLinkFromNodeId(null), []);
+
+  // Links for the selected node shown inside the inspector
+  const selectedNodeLinks = useMemo(() => {
+    if (!selectedNode?.dataId) return [];
+    return getDataLinksForId(data, selectedNode.dataId, replaceVariables);
+  }, [selectedNode?.dataId, data, replaceVariables]);
 
   // Build data links for the current context menu target
   const contextMenuLinks = useMemo(() => {
@@ -216,6 +221,8 @@ export const CanvasPanel: React.FC<Props> = ({
           onDelete={handleDeleteSelected}
           onStartLink={handleStartLink}
           onCancelLink={handleCancelLink}
+          dataLinks={selectedNodeLinks}
+          showCanvasSection={options.showCanvasSection ?? true}
           onNodePatch={(patch, commit) => {
             if (selectedNodeId) {
               canvas.patchNode(selectedNodeId, patch, commit);

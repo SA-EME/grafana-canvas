@@ -9,6 +9,7 @@ export const plugin = new PanelPlugin<SimpleOptions>(SimplePanel)
     showMiniHud: true,
     showViewControls: true,
     showNodeInspector: true,
+    showCanvasSection: true,
     defaultViewport: { x: 0, y: 0, scale: 1 },
     canvas: {
       viewport: { x: 0, y: 0, scale: 1 },
@@ -52,6 +53,13 @@ export const plugin = new PanelPlugin<SimpleOptions>(SimplePanel)
         name: 'Show node inspector',
         description: 'Show the inspector panel on node click. Disable to use data links instead.',
         defaultValue: true,
+      })
+      .addBooleanSwitch({
+        path: 'showCanvasSection',
+        name: 'Show canvas section in inspector',
+        description: 'Show nodeId, dataId, position and size in the node inspector.',
+        defaultValue: true,
+        showIf: (opts) => opts.showNodeInspector,
       })
       .addNumberInput({
         path: 'defaultViewport.x',
