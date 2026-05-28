@@ -95,6 +95,12 @@ export const NodeShape: React.FC<Props> = ({
 
   // ── Main drag (move) ────────────────────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent<SVGGElement>) => {
+    // In view mode, shapes and texts are fully transparent to pointer events
+    // so the canvas stage can handle panning normally.
+    if (!editMode && elementKind !== 'node') {
+      return;
+    }
+
     e.stopPropagation();
     onClick(e.clientX, e.clientY);
 

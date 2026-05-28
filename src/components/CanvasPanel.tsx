@@ -88,9 +88,11 @@ export const CanvasPanel: React.FC<Props> = ({
         return;
       }
 
-      // Shapes and texts never enter link mode or show inspector
+      // Shapes and texts are only selectable in edit mode
       if (elementKind !== 'node') {
-        setSelectedNodeId(nodeId);
+        if (options.editMode) {
+          setSelectedNodeId(nodeId);
+        }
         return;
       }
 
