@@ -1,5 +1,5 @@
 
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { css, cx } from '@emotion/css';
 import { Viewport } from '../types';
 
@@ -46,6 +46,18 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  // React registers onWheel as passive, so e.preventDefault() has no effect on page scroll.
+  // We attach a native non-passive wheel listener to actually block it.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) {
+      return;
+    }
+    const handler = (e: WheelEvent) => e.preventDefault();
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
+
   const panRef = useRef({
     dragging: false,
     startClientX: 0,
@@ -62,7 +74,6 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     if (!enableZoom) {
       return;
     }
-    e.preventDefault();
 
     const svg = svgRef.current;
     if (!svg) {
